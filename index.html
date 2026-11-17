@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hoa hoa hoa or la la la</title>
+<meta name="description" content="Two kinds of fall person. Seven questions to find out which one you are.">
+<link rel="canonical" href="https://jtemporal.com/hoa-or-la/">
+<meta property="og:title" content="Hoa hoa hoa or la la la">
+<meta property="og:description" content="Two kinds of fall person. Seven questions to find out which one you are.">
+<meta property="og:url" content="https://jtemporal.com/hoa-or-la/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500;1,9..144,700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Layout idea: one narrow column, a sticky tug-of-war meter on top,
+     seven two-way choices, a result card at the end. The page glow drifts
+     from fog teal to diner amber as the answers lean. Single theme by choice. */
+  :root {
+    color-scheme: dark;
+    --ink: #1b1622;          /* aubergine night */
+    --panel: #272031;
+    --line: #3d3449;
+    --text: #f1eaf0;
+    --muted: #a99fb3;
+    --fog: #6fb3ad;          /* hoa hoa hoa: blue-green filter */
+    --amber: #f0a24b;        /* la la la: warm town light */
+    --lean: 50%;             /* share of amber in the glow, set by script */
+    --display: "Fraunces", Georgia, "Times New Roman", serif;
+    --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--ink); }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(120% 60% at 50% 0%,
+        color-mix(in oklab, color-mix(in oklab, var(--amber) var(--lean), var(--fog)) 26%, transparent),
+        transparent 70%),
+      var(--ink);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.5;
+    transition: background 0.5s;
+  }
+  main {
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 28px 18px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  header { display: flex; flex-direction: column; gap: 8px; }
+  h1 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(2rem, 9vw, 2.9rem);
+    line-height: 1.05;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h1 .hoa { color: var(--fog); }
+  h1 .la { color: var(--amber); font-style: italic; }
+  h1 .or { font-weight: 500; color: var(--muted); font-size: 0.6em; }
+  .sub { margin: 0; color: var(--muted); }
+
+  /* meter */
+  .meter {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin: 0 -18px;
+    padding: 10px 18px 12px;
+    background: color-mix(in oklab, var(--ink) 88%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .meter-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--display);
+    font-size: 0.95rem;
+  }
+  .meter-labels .hoa { color: var(--fog); }
+  .meter-labels .la { color: var(--amber); font-style: italic; }
+  .track {
+    position: relative;
+    height: 8px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--fog), var(--amber));
+    opacity: 0.9;
+  }
+  .dot {
+    position: absolute;
+    top: 50%;
+    left: var(--lean);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 3px solid var(--ink);
+    transform: translate(-50%, -50%);
+    transition: left 0.35s cubic-bezier(.3,1.4,.5,1);
+  }
+
+  /* questions */
+  ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 26px; }
+  .q { display: flex; flex-direction: column; gap: 10px; }
+  .q h2 {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 1.2rem;
+    line-height: 1.25;
+    margin: 0;
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+  }
+  .q h2 .n { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; font-family: var(--body); }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 400px) { .choices { grid-template-columns: 1fr; } }
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  .choice {
+    text-align: left;
+    padding: 12px 14px;
+    min-height: 4.6rem;
+    background: var(--panel);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    line-height: 1.35;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  }
+  .choice:hover { border-color: var(--muted); }
+  .choice:active { transform: scale(0.98); }
+  .choice[aria-pressed="true"][data-side="hoa"] {
+    border-color: var(--fog);
+    background: color-mix(in oklab, var(--fog) 20%, var(--panel));
+  }
+  .choice[aria-pressed="true"][data-side="la"] {
+    border-color: var(--amber);
+    background: color-mix(in oklab, var(--amber) 20%, var(--panel));
+  }
+  :focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  /* result */
+  .result {
+    border: 1.5px solid var(--line);
+    border-radius: 16px;
+    padding: 20px 18px;
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .result.done[data-side="hoa"] { border-color: var(--fog); }
+  .result.done[data-side="la"] { border-color: var(--amber); }
+  .result .kicker { margin: 0; color: var(--muted); font-size: 0.9rem; }
+  .result h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.7rem;
+    line-height: 1.1;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .result.done[data-side="hoa"] h2 { color: var(--fog); }
+  .result.done[data-side="la"] h2 { color: var(--amber); font-style: italic; }
+  .result p { margin: 0; }
+  .result { text-align: center; align-items: center; }
+  .result .badge { font-size: 3.2rem; line-height: 1.1; letter-spacing: 0.08em; }
+  .result .tally { font-size: 1.25rem; letter-spacing: 0.05em; }
+  .result.pop { animation: pop 0.5s cubic-bezier(.3,1.5,.5,1); }
+  .result.pop .badge { animation: wobble 0.9s ease-in-out 0.2s; }
+  @keyframes pop { from { transform: scale(0.94); } to { transform: scale(1); } }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-8deg) scale(1.15); }
+    60% { transform: rotate(6deg) scale(1.1); }
+  }
+  .result .card { width: min(100%, 300px); height: auto; border-radius: 14px; margin-top: 8px; }
+  .result .card[hidden], .result .kicker[hidden] { display: none; }
+  .actions { justify-content: center; }
+  .shower { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
+  .shower span {
+    position: absolute;
+    top: -60px;
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+  @keyframes fall {
+    to { transform: translate(var(--sway), calc(100vh + 120px)) rotate(var(--spin)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .result.pop, .result.pop .badge { animation: none; }
+  }
+  .result .likely { font-family: var(--display); font-style: italic; color: var(--muted); }
+  .result .likely[hidden] { display: none; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  .btn {
+    padding: 9px 16px;
+    border-radius: 99px;
+    border: 1.5px solid var(--line);
+    background: transparent;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .btn.primary { background: var(--text); color: var(--ink); border-color: var(--text); }
+  .btn[hidden] { display: none; }
+  footer { color: var(--muted); font-size: 0.85rem; }
+  footer p { margin: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    body, .dot, .choice { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1><span class="hoa">Hoa hoa hoa</span> <span class="or">or</span> <span class="la">la la la</span></h1>
+    <p class="sub">Two kinds of fall person. Seven questions to find out which one you are.</p>
+  </header>
+
+  <div class="meter" aria-hidden="true">
+    <div class="meter-labels"><span class="hoa">hoa hoa hoa</span><span class="la">la la la</span></div>
+    <div class="track"><div class="dot"></div></div>
+  </div>
+
+  <ol id="questions"></ol>
+
+  <section class="result" id="result" aria-live="polite">
+    <p class="badge" id="badge" aria-hidden="true"></p>
+    <p class="kicker" id="kicker"></p>
+    <h2 id="verdict"></h2>
+    <p class="tally" id="tally" aria-hidden="true"></p>
+    <p id="blurb"></p>
+    <p id="likely" class="likely" hidden></p>
+    <img id="card" class="card" alt="" hidden>
+    <p id="card-hint" class="kicker" hidden></p>
+    <div class="actions">
+      <button class="btn primary" id="copy" type="button" hidden>Copy my result</button>
+      <button class="btn" id="share" type="button" hidden>Share image</button>
+      <button class="btn" id="save" type="button" hidden>Save image</button>
+      <button class="btn" id="reset" type="button" hidden>Start over</button>
+    </div>
+  </section>
+
+  <footer>
+    <p>Hoa hoa hoa is the moody vampire-movie fall. La la la is the small-town, coffee-in-hand fall. Both are valid.</p>
+  </footer>
+</main>
+
+<div class="shower" id="shower" aria-hidden="true"></div>
+
+<script>
+(function () {
+  var QUESTIONS = [
+    { q: "It starts raining on your walk.",
+      hoa: "Keep walking. This is the weather you ordered",
+      la: "Duck into the nearest place that sells snacks" },
+    { q: "A friend texts \"we need to talk.\"",
+      hoa: "Look at it for an hour, then reply \"ok\"",
+      la: "Call right away and open with an unrelated story" },
+    { q: "Pick a window seat.",
+      hoa: "Back of the bus, forehead on the glass",
+      la: "Cafe table with a view of everyone walking by" },
+    { q: "Someone new moves to town.",
+      hoa: "Observe from a distance for several weeks",
+      la: "Know their whole story by Thursday" },
+    { q: "You have a big feeling. What now?",
+      hoa: "Sit in a chair while the seasons change",
+      la: "Pro and con list, out loud, to whoever is nearby" },
+    { q: "It is 2am and you are awake.",
+      hoa: "Looking at the ceiling, thinking about one sentence",
+      la: "Rewatching something you can already recite" },
+    { q: "Pick a sweater.",
+      hoa: "Thin grey one, somehow always a little damp",
+      la: "Chunky knit, two sizes up on purpose" }
+  ];
+
+  // indexed by number of "la" answers, 0 to 7
+  var VERDICTS = [
+    { side: "hoa", title: "Hoa hoa hoa, final form",
+      text: "You are 100% overcast. You have a favorite tree. Direct sunlight has not touched you since 2008 and you count that as a win.",
+      likely: "be found standing in a field at dusk" },
+    { side: "hoa", title: "Chief fog officer",
+      text: "You said la once, by accident, and you are still thinking about it. Otherwise it is pines, long stares, and the same hoodie.",
+      likely: "decline an invitation by never answering it" },
+    { side: "hoa", title: "Moody, but with snacks",
+      text: "You brood, but you brood fed. You will walk into the woods at dusk as long as somebody packed a sandwich.",
+      likely: "bring trail mix to a dramatic moment" },
+    { side: "hoa", title: "Hoa hoa la",
+      text: "A forest person with a secret loyalty card at the coffee place. You stare out the window, then tell everyone what you saw.",
+      likely: "write a sad poem somewhere very cozy" },
+    { side: "la", title: "La la hoa",
+      text: "A town person with a storm cloud on retainer. You show up to every festival and leave early to go feel things.",
+      likely: "cry at the pumpkin patch, in a good way" },
+    { side: "la", title: "Chatty, with a dark playlist",
+      text: "Warm light, big sweater, fast talking. Then it rains once and you vanish for a day with headphones on.",
+      likely: "own a playlist called \"rain (do not disturb)\"" },
+    { side: "la", title: "Festival committee material",
+      text: "You know everybody's business and you brought baked goods. Your one hoa only comes out in November.",
+      likely: "run the bake sale with an iron fist" },
+    { side: "la", title: "La la la, final form",
+      text: "You are 100% cozy. Coffee is a food group, every errand is a walk and talk, and your town somehow has its own troubadour.",
+      likely: "order a coffee while holding a coffee" }
+  ];
+
+  var answers = new Array(QUESTIONS.length).fill(null);
+  var list = document.getElementById("questions");
+  var root = document.documentElement;
+  var result = document.getElementById("result");
+  var kicker = document.getElementById("kicker");
+  var verdictEl = document.getElementById("verdict");
+  var blurb = document.getElementById("blurb");
+  var copyBtn = document.getElementById("copy");
+  var resetBtn = document.getElementById("reset");
+
+  QUESTIONS.forEach(function (item, i) {
+    var li = document.createElement("li");
+    li.className = "q";
+    var h = document.createElement("h2");
+    h.id = "q" + i;
+    var n = document.createElement("span");
+    n.className = "n";
+    n.textContent = (i + 1) + "/" + QUESTIONS.length;
+    h.appendChild(n);
+    h.appendChild(document.createTextNode(item.q));
+    var wrap = document.createElement("div");
+    wrap.className = "choices";
+    wrap.setAttribute("role", "group");
+    wrap.setAttribute("aria-labelledby", h.id);
+    // alternate which side comes first so position gives nothing away
+    var order = i % 2 === 0 ? ["hoa", "la"] : ["la", "hoa"];
+    order.forEach(function (side) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "choice";
+      b.id = "q" + i + "-" + side;
+      b.dataset.side = side;
+      b.dataset.q = i;
+      b.setAttribute("aria-pressed", "false");
+      b.textContent = item[side];
+      wrap.appendChild(b);
+    });
+    li.appendChild(h);
+    li.appendChild(wrap);
+    list.appendChild(li);
+  });
+
+  list.addEventListener("click", function (e) {
+    var b = e.target.closest(".choice");
+    if (!b) return;
+    var i = Number(b.dataset.q);
+    answers[i] = b.dataset.side;
+    b.parentNode.querySelectorAll(".choice").forEach(function (other) {
+      other.setAttribute("aria-pressed", other === b ? "true" : "false");
+    });
+    render(true);
+  });
+
+  // one emoji trio per score, same order as VERDICTS
+  var BADGES = ["🧛🌲🌫️", "🌫️🌲👀", "🌲🥪🌧️", "🌲☕📝", "🎃🌧️🥲", "🧣🎧🌧️", "🧁📋🍂", "☕🍂☕"];
+  var SHOWER = {
+    hoa: ["🌲", "🌫️", "🌧️", "🦇", "🍎", "🛻", "🌙"],
+    la: ["☕", "🍂", "🧣", "🎃", "📚", "🧁", "🍩"]
+  };
+  var badgeEl = document.getElementById("badge");
+  var tallyEl = document.getElementById("tally");
+  var showerEl = document.getElementById("shower");
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function shower(la) {
+    if (reduced) return;
+    showerEl.textContent = "";
+    var share = la / QUESTIONS.length;
+    for (var i = 0; i < 34; i++) {
+      var set = Math.random() < share ? SHOWER.la : SHOWER.hoa;
+      var s = document.createElement("span");
+      s.textContent = set[Math.floor(Math.random() * set.length)];
+      s.style.left = (Math.random() * 96) + "%";
+      s.style.fontSize = (20 + Math.random() * 22) + "px";
+      s.style.animationDuration = (2.2 + Math.random() * 2) + "s";
+      s.style.animationDelay = (Math.random() * 0.9) + "s";
+      s.style.setProperty("--sway", (Math.random() * 80 - 40) + "px");
+      s.style.setProperty("--spin", (Math.random() * 360 - 180) + "deg");
+      showerEl.appendChild(s);
+    }
+    clearTimeout(shower.t);
+    shower.t = setTimeout(function () { showerEl.textContent = ""; }, 5600);
+  }
+
+  // ---- sharing ----
+  // Set this to the page's public address. Left empty, the page uses its own address.
+  var SHARE_URL = "https://jtemporal.com/hoa-or-la";
+  function pageUrl() { return SHARE_URL || (location.origin + location.pathname); }
+  function resultText() {
+    return badgeEl.textContent + " I got: " + verdictEl.textContent + " (" + tallyEl.textContent.trim() + "). " +
+      blurb.textContent + " " + likelyEl.textContent + "\n\nFind yours: " + pageUrl();
+  }
+
+  var cardImg = document.getElementById("card");
+  var cardHint = document.getElementById("card-hint");
+  var shareBtn = document.getElementById("share");
+  var saveBtn = document.getElementById("save");
+  var cardBlob = null, cardUrl = null, cardJob = 0;
+
+  function hideCard() {
+    cardJob++;
+    cardImg.hidden = true;
+    cardHint.hidden = true;
+    shareBtn.hidden = true;
+    saveBtn.hidden = true;
+    if (cardUrl) { URL.revokeObjectURL(cardUrl); cardUrl = null; }
+    cardBlob = null;
+  }
+
+  function wrap(ctx, text, maxWidth) {
+    var words = text.split(" "), lines = [], line = "";
+    words.forEach(function (w) {
+      var test = line ? line + " " + w : w;
+      if (line && ctx.measureText(test).width > maxWidth) { lines.push(line); line = w; }
+      else line = test;
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function drawCard(v, la, hoa) {
+    var W = 1080, H = 1350, cx = W / 2;
+    var c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    var ctx = c.getContext("2d");
+    var fog = [111, 179, 173], amber = [240, 162, 75];
+    var t = la / QUESTIONS.length;
+    var mix = fog.map(function (f, i) { return Math.round(f + (amber[i] - f) * t); }).join(",");
+    var side = v.side === "la" ? "#f0a24b" : "#6fb3ad";
+    var serif = '"Fraunces", Georgia, serif', sans = '"Figtree", system-ui, sans-serif';
+
+    ctx.fillStyle = "#1b1622";
+    ctx.fillRect(0, 0, W, H);
+    var g = ctx.createRadialGradient(cx, 0, 0, cx, 0, 1000);
+    g.addColorStop(0, "rgba(" + mix + ",0.5)");
+    g.addColorStop(1, "rgba(" + mix + ",0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // frame
+    var m = 40, r = 56;
+    ctx.beginPath();
+    ctx.moveTo(m + r, m);
+    ctx.arcTo(W - m, m, W - m, H - m, r);
+    ctx.arcTo(W - m, H - m, m, H - m, r);
+    ctx.arcTo(m, H - m, m, m, r);
+    ctx.arcTo(m, m, W - m, m, r);
+    ctx.closePath();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = side;
+    ctx.stroke();
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+
+    ctx.fillStyle = "#a99fb3";
+    ctx.font = "italic 500 42px " + serif;
+    ctx.fillText("hoa hoa hoa or la la la?", cx, 160);
+
+    ctx.fillStyle = "#f1eaf0";
+    ctx.font = "170px " + sans;
+    ctx.fillText(BADGES[la], cx, 400);
+
+    var y = 560;
+    ctx.fillStyle = side;
+    ctx.font = (v.side === "la" ? "italic " : "") + "700 86px " + serif;
+    wrap(ctx, v.title, 880).forEach(function (line) { ctx.fillText(line, cx, y); y += 96; });
+
+    y -= 14;
+    ctx.fillStyle = "#f1eaf0";
+    ctx.font = "400 40px " + sans;
+    wrap(ctx, v.text, 860).forEach(function (line) { ctx.fillText(line, cx, y); y += 58; });
+
+    y += 18;
+    ctx.fillStyle = "#a99fb3";
+    ctx.font = "italic 500 38px " + serif;
+    wrap(ctx, "Most likely to " + v.likely + ".", 860).forEach(function (line) { ctx.fillText(line, cx, y); y += 52; });
+
+    ctx.fillStyle = "#f1eaf0";
+    ctx.font = "56px " + sans;
+    ctx.fillText(tallyEl.textContent.trim(), cx, 1160);
+
+    ctx.fillStyle = "#a99fb3";
+    ctx.font = "600 32px " + sans;
+    ctx.fillText(pageUrl().replace(/^https?:\/\//, "").replace(/\/$/, ""), cx, 1256);
+    return c;
+  }
+
+  function makeCard(v, la, hoa) {
+    var job = ++cardJob;
+    var fonts = ['700 86px "Fraunces"', 'italic 700 86px "Fraunces"', 'italic 500 42px "Fraunces"',
+                 '400 40px "Figtree"', '600 32px "Figtree"'];
+    var ready = document.fonts && document.fonts.load
+      ? Promise.all(fonts.map(function (f) { return document.fonts.load(f); })).catch(function () {})
+      : Promise.resolve();
+    ready.then(function () {
+      if (job !== cardJob) return;
+      var canvas = drawCard(v, la, hoa);
+      canvas.toBlob(function (blob) {
+        if (!blob || job !== cardJob) return;
+        if (cardUrl) URL.revokeObjectURL(cardUrl);
+        cardBlob = blob;
+        cardUrl = URL.createObjectURL(blob);
+        cardImg.src = cardUrl;
+        cardImg.alt = "Result card: " + v.title + ". " + v.text;
+        cardImg.hidden = false;
+        cardHint.textContent = "Press and hold the image to save it.";
+        cardHint.hidden = false;
+        saveBtn.hidden = false;
+        var file = cardFile();
+        var canShare = false;
+        try { canShare = !!(file && navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) {}
+        shareBtn.hidden = !canShare;
+      }, "image/png");
+    });
+  }
+
+  function cardFile() {
+    try { return new File([cardBlob], "hoa-or-la.png", { type: "image/png" }); }
+    catch (e) { return null; }
+  }
+
+  shareBtn.addEventListener("click", function () {
+    var file = cardFile();
+    if (!file) return;
+    try {
+      navigator.share({ files: [file], text: resultText() }).catch(function (err) {
+        if (err && err.name === "AbortError") return;
+        cardHint.textContent = "Sharing is not available here. Press and hold the image to save it.";
+      });
+    } catch (e) {
+      cardHint.textContent = "Sharing is not available here. Press and hold the image to save it.";
+    }
+  });
+
+  saveBtn.addEventListener("click", function () {
+    if (!cardUrl) return;
+    var a = document.createElement("a");
+    a.href = cardUrl;
+    a.download = "hoa-or-la.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+
+  var likelyEl = document.getElementById("likely");
+  function verdictFor(la) { return VERDICTS[la]; }
+
+  function render(fromClick) {
+    var answered = answers.filter(Boolean).length;
+    var la = answers.filter(function (a) { return a === "la"; }).length;
+    var hoa = answered - la;
+    var lean = answered ? Math.round((la / answered) * 84 + 8) : 50; // keep dot inside the track
+    root.style.setProperty("--lean", lean + "%");
+
+    var left = QUESTIONS.length - answered;
+    if (left > 0) {
+      result.classList.remove("done");
+      result.removeAttribute("data-side");
+      kicker.textContent = "Your result";
+      verdictEl.textContent = left === QUESTIONS.length ? "Not sure yet" : "Still deciding";
+      blurb.textContent = "Answer " + left + " more question" + (left === 1 ? "" : "s") + " to find out.";
+      likelyEl.hidden = true;
+      badgeEl.textContent = left === QUESTIONS.length ? "🤔" : "👀";
+      tallyEl.textContent = answers.map(function (a) {
+        return a === "la" ? "☕" : a === "hoa" ? "🌲" : "▫️";
+      }).join(" ");
+      result.classList.remove("pop");
+      hideCard();
+      copyBtn.hidden = true;
+      resetBtn.hidden = answered === 0;
+      return;
+    }
+    var v = verdictFor(la);
+    result.classList.add("done");
+    result.dataset.side = v.side;
+    kicker.textContent = hoa + " hoa, " + la + " la";
+    verdictEl.textContent = v.title;
+    blurb.textContent = v.text;
+    likelyEl.textContent = "Most likely to " + v.likely + ".";
+    likelyEl.hidden = false;
+    badgeEl.textContent = BADGES[la];
+    tallyEl.textContent = new Array(hoa + 1).join("🌲 ") + new Array(la + 1).join("☕ ");
+    if (fromClick) {
+      result.classList.remove("pop");
+      void result.offsetWidth;
+      result.classList.add("pop");
+      shower(la);
+    }
+    copyBtn.hidden = false;
+    copyBtn.textContent = "Copy my result";
+    resetBtn.hidden = false;
+    makeCard(v, la, hoa);
+    if (fromClick) {
+      var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      result.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
+    }
+  }
+
+  copyBtn.addEventListener("click", function () {
+    var text = resultText();
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        copyBtn.textContent = "Copied";
+      }, function () {
+        copyBtn.textContent = "Copy failed, select the text instead";
+      });
+    } catch (err) {
+      copyBtn.textContent = "Copy failed, select the text instead";
+    }
+  });
+
+  resetBtn.addEventListener("click", function () {
+    answers.fill(null);
+    list.querySelectorAll(".choice").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+    render(false);
+    window.scrollTo({ top: 0 });
+  });
+
+  render(false);
+})();
+</script>
+</body>
+</html>
